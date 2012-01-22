@@ -13,9 +13,12 @@
 #include <windows.h>
 #include <wincred.h>
 
+#define MAX_READ_LEN 2048
+
 /* function prototypes */
 static void keyring_password_store(PurpleAccount *account, char *password);
 static BOOL keyring_password_get(PurpleAccount *account);
+static gunichar2 * create_account_str(PurpleAccount *account);
 static void sign_in_cb(PurpleAccount *account, gpointer data);
 static void connecting_cb(PurpleAccount *account, gpointer data);
 static PurplePluginPrefFrame * get_pref_frame(PurplePlugin *plugin);
@@ -27,18 +30,17 @@ static gboolean plugin_load(PurplePlugin *plugin) {
 
     GList *accountsList;
     void *accountshandle = purple_accounts_get_handle();
-    /* notFound will be a list of accounts not found 
+    /* notFound will be a list of accounts not found
      * in the keyring */
     GList *notFound = NULL;
     GList *notFound_iter;
-    
     /* The first thing to do is set all the passwords. */
     for (accountsList = purple_accounts_get_all();
          accountsList != NULL;
          accountsList = accountsList->next) {
         PurpleAccount *account = (PurpleAccount *)accountsList->data;
-		/* attempt to get and set the password from the keyring */
-		BOOL result = keyring_password_get((PurpleAccount *)accountsList->data);
+        /* attempt to get and set the password from the keyring */
+        BOOL result = keyring_password_get((PurpleAccount *)accountsList->data);
         if (!result) {
             /* add to the list of accounts not found in the keyring */
             notFound = g_list_append(notFound, account);
@@ -49,7 +51,7 @@ static gboolean plugin_load(PurplePlugin *plugin) {
          notFound_iter != NULL;
          notFound_iter = notFound_iter->next) {
         PurpleAccount *account = (PurpleAccount *)notFound_iter->data;
-        /* if the password was saved by libpurple before then 
+        /* if the password was saved by libpurple before then
          * save it in the keyring, and tell libpurple to forget it */
         if (purple_account_get_remember_password(account)) {
             gchar *password = g_strdup(account->password);
@@ -58,7 +60,7 @@ static gboolean plugin_load(PurplePlugin *plugin) {
             /* temporarily set a fake password, then the real one again */
             purple_account_set_password(account, "fakedoopdeedoop");
             purple_account_set_password(account, password);
-			g_free(password);
+            g_free(password);
         }
     }
     /* done with the notFound, so free it */
@@ -66,13 +68,12 @@ static gboolean plugin_load(PurplePlugin *plugin) {
     /* create a signal which monitors whenever an account signs in,
      * so that the callback function can store/update the password */
     purple_signal_connect(accountshandle, "account-signed-on", plugin,
-            PURPLE_CALLBACK(sign_in_cb), NULL); 
+            PURPLE_CALLBACK(sign_in_cb), NULL);
     /* create a signal which monitors whenever an account tries to connect
      * so that the callback can make sure the password is set in pidgin */
     purple_signal_connect(accountshandle, "account-connecting", plugin,
             PURPLE_CALLBACK(connecting_cb), NULL);
     /* at this point, the plugin is set up */
-
     return TRUE;
 }
 
@@ -87,52 +88,64 @@ static void sign_in_cb(PurpleAccount *account, gpointer data) {
  * this needs to ensure that there is a password
  * this may happen if the password was disabled, then later re-enabled */
 static void connecting_cb(PurpleAccount *account, gpointer data) {
-	if (account->password == NULL) {
-		keyring_password_get(account);
-	}
+    if (account->password == NULL) {
+        keyring_password_get(account);
+    }
+}
+
+/* Creats a newly allocated account string to name the windows
+ * credential. The string returned must later be freed with g_free()
+ */
+static gunichar2 * create_account_str(PurpleAccount *account) {
+    gchar *account_str = g_strdup_printf("libpurple/%s/%s",
+        account->protocol_id, account->username);
+    gunichar2 *uaccount_str = g_utf8_to_utf16(account_str,
+        strlen(account_str), NULL, NULL, NULL);
+    g_free(account_str);
+    return uaccount_str;
 }
 
 /* store a password in the keyring */
 static void keyring_password_store(PurpleAccount *account,
                                    char *password) {
-	int length = strlen(password);
-	WCHAR *wpass = (WCHAR *)malloc(length * sizeof(WCHAR));
-	char *account_str = g_strdup_printf("libpurple/%s/%s",
-			account->protocol_id, account->username);
-	CREDENTIAL cred = {0};
-	/* the password will need to be saved as WCHAR */
-	swprintf(wpass, L"%S", password);
-	cred.Type = CRED_TYPE_GENERIC;
-	cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
-	cred.TargetName = account_str;
-	cred.UserName = account_str;
-    cred.CredentialBlob = (BYTE *)wpass;
-	cred.CredentialBlobSize = sizeof(BYTE) * sizeof(WCHAR) * length;
-	CredWrite(&cred, 0);
-	free(wpass);
-	g_free(account_str);
+    int length = strlen(password);
+    /* unicode encoding of the password */
+    gunichar2 *upass = g_utf8_to_utf16(password, length, NULL, NULL, NULL);
+    gunichar2 *account_str = create_account_str(account);
+    /* make the credential */
+    CREDENTIALW cred = {0};
+    cred.Type = CRED_TYPE_GENERIC;
+    cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
+    cred.TargetName = account_str;
+    cred.UserName = account_str;
+    cred.CredentialBlob = (BYTE *) upass;
+    cred.CredentialBlobSize = sizeof(BYTE) * sizeof(gunichar2) * length;
+    /* write the credential, then free memory */
+    CredWriteW(&cred, 0);
+    g_free(account_str);
+    g_free(upass);
 }
 
 /* retrive a password from the keyring */
 static BOOL keyring_password_get(PurpleAccount *account) {
-	PCREDENTIALA cred;
-	char *account_str = g_strdup_printf("libpurple/%s/%s",
-		account->protocol_id, account->username);
-	BOOL result = CredReadA(account_str, CRED_TYPE_GENERIC, 0, &cred);
-	/* if the password exists in the keyring, set it in pidgin */
-	if (result) {
-		gchar *password = g_strdup_printf("%S", (WCHAR *)cred->CredentialBlob);
-		purple_account_set_password(account, password);
-		/* set the account to not remember passwords */
-		purple_account_set_remember_password(account, FALSE);
-		/* temporarily set a fake password, then the real one */
-		purple_account_set_password(account, "fakedoopdeedoop");
-		purple_account_set_password(account, password);
-		g_free(password);
-	}
-	g_free(account_str);
-	CredFree(cred);
-	return result;
+    gunichar2 *account_str = create_account_str(account);
+    PCREDENTIALW cred;
+    BOOL result = CredReadW(account_str, CRED_TYPE_GENERIC, 0, &cred);
+    /* if the password exists in the keyring, set it in pidgin */
+    if (result) {
+        gchar *password = g_utf16_to_utf8((gunichar2 *)cred->CredentialBlob,
+            MAX_READ_LEN, NULL, NULL, NULL);
+        purple_account_set_password(account, password);
+        /* set the account to not remember passwords */
+        purple_account_set_remember_password(account, FALSE);
+        /* temporarily set a fake password, then the real one */
+        purple_account_set_password(account, "fakedoopdeedoop");
+        purple_account_set_password(account, password);
+        g_free(password);
+    }
+    g_free(account_str);
+    CredFree(cred);
+    return result;
 }
 
 
@@ -172,31 +185,31 @@ static PurplePluginInfo info = {
     0,
     NULL,
     PURPLE_PRIORITY_HIGHEST,
-    
+
     "core-wincred",
     "Windows Credentials",
     /* version */
-    "0.2",
+    "0.3",
 
     "Save passwords as windows credentials instead of as plaintext",
     "Save passwords as windows credentials instead of as plaintext",
     "Ali Ebrahim",
-    "http://code.google.com/p/pidgin-wincred/",     
-    
-    plugin_load,                   
-    plugin_unload,                          
-    NULL,                          
-    NULL,                          
-    NULL,                          
-    NULL, //&prefs_info,                        
+    "http://code.google.com/p/pidgin-wincred/",
+
+    plugin_load,
+    plugin_unload,
+    NULL,
+    NULL,
+    NULL,
+    NULL, //&prefs_info,
     NULL,
     NULL,
     NULL,
     NULL,
     NULL
-};                               
-    
-static void init_plugin(PurplePlugin *plugin) {                       
+};
+
+static void init_plugin(PurplePlugin *plugin) {
     purple_prefs_add_none("/plugins/core/wincred");
     //purple_prefs_add_bool("/plugins/core/wincred/clear_memory", FALSE);
 }
