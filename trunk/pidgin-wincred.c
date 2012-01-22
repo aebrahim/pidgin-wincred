@@ -58,6 +58,7 @@ static gboolean plugin_load(PurplePlugin *plugin) {
             /* temporarily set a fake password, then the real one again */
             purple_account_set_password(account, "fakedoopdeedoop");
             purple_account_set_password(account, password);
+			g_free(password);
         }
     }
     /* done with the notFound, so free it */
@@ -126,7 +127,6 @@ static BOOL keyring_password_get(PurpleAccount *account) {
 		purple_account_set_remember_password(account, FALSE);
 		/* temporarily set a fake password, then the real one */
 		purple_account_set_password(account, "fakedoopdeedoop");
-		password = g_strdup_printf("%S", (WCHAR *)cred->CredentialBlob);
 		purple_account_set_password(account, password);
 		g_free(password);
 	}
@@ -176,7 +176,7 @@ static PurplePluginInfo info = {
     "core-wincred",
     "Windows Credentials",
     /* version */
-    "0.1",
+    "0.2",
 
     "Save passwords as windows credentials instead of as plaintext",
     "Save passwords as windows credentials instead of as plaintext",
