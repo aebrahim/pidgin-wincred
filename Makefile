@@ -1,65 +1,37 @@
-#
-# Makefile.mingw
-#
-# Description: Makefile for win32 (mingw) version of libpurple Plugins
-#
+# Standalone Makefile for automated builds of win32 libpurple plugins
 
 TARGET = pidgin-wincred.dll
 
-PIDGIN_TREE_TOP := ../..
-include $(PIDGIN_TREE_TOP)/libpurple/win32/global.mak
-.SUFFIXES: .c .dll
+# Filepaths
+GTK_TOP := gtk
+PURPLE_TOP := pidgin-2.10.11/libpurple
 
-##
-## INCLUDE PATHS
-##
+# Compiler
+CC := i686-w64-mingw32-gcc
+CFLAGS = -O2 -Wall -Waggregate-return -Wcast-align -Wdeclaration-after-statement -Werror-implicit-function-declaration -Wextra -Wno-sign-compare -Wno-unused-parameter -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef -pipe -mms-bitfields -g
+LDFLAGS = -Wl,--enable-auto-image-base -Wl,--enable-auto-import -Wl,--dynamicbase -Wl,--nxcompat
+
+
 INCLUDE_PATHS +=	\
 			-I$(GTK_TOP)/include \
 			-I$(GTK_TOP)/include/glib-2.0 \
 			-I$(GTK_TOP)/lib/glib-2.0/include \
-			-I$(PIDGIN_TREE_TOP) \
-			-I$(PURPLE_TOP) \
-			-I$(PURPLE_TOP)/win32 \
-			-I`pwd`
+			-I$(PURPLE_TOP)
 
-LIB_PATHS +=		\
-			-L$(GTK_TOP)/lib \
-			-L$(PURPLE_TOP)
+LIB_PATHS = -L`pwd` -L$(GTK_TOP)/lib
 
-##
-## LIBRARIES
-##
-LIBS =	\
-			-lglib-2.0 \
-			-lgobject-2.0 \
-			-lgmodule-2.0 \
-			-lintl \
-			-lws2_32 \
-			-lpurple \
+LIBS = -lglib-2.0 -lpurple
 
-CFLAGS = -O2 -Wall -Waggregate-return -Wcast-align -Wdeclaration-after-statement -Werror-implicit-function-declaration -Wextra -Wno-sign-compare -Wno-unused-parameter -Winit-self -Wmissing-declarations -Wmissing-prototypes -Wnested-externs -Wpointer-arith -Wundef -pipe -mms-bitfields -g
 
-##
-## TARGET DEFINITIONS
-##
+.SUFFIXES: .c .dll
 .PHONY: all clean
 
 all: $(TARGET)
 
 .c.dll:
-	$(CC) $(CFLAGS) $(DEFINES) $(INCLUDE_PATHS) -mwindows -o $@.o -c $<
-	$(CC) -shared $@.o $(LIB_PATHS) $(LIBS) $(DLL_LD_FLAGS) -o $@
+	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -mwindows -o $@.o -c $<
+	$(CC) -shared $@.o $(LIB_PATHS) $(LIBS) $(LD_FLAGS) -o $@
 	rm $@.o
 
-install: $(TARGET)
-	cp $(TARGET) /cygdrive/c/Users/$(USERNAME)/AppData/Roaming/.purple/plugins/
-
-
-
-##
-## CLEAN RULES
-##
 clean:
 	rm -f *.o *.dll
-
-include $(PIDGIN_COMMON_TARGETS)
