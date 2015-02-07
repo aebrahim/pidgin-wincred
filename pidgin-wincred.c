@@ -82,6 +82,17 @@ static void sign_in_cb(PurpleAccount *account, gpointer data) {
     return;
 }
 
+static void memory_clearing_function(PurpleAccount *account) {
+    gboolean clear_memory = purple_prefs_get_bool(
+            "/plugins/core/wincred/clear_memory");
+    if (clear_memory) {
+        if (account->password != NULL) {
+            g_free(account->password);
+            account->password = NULL;
+        }
+    }
+}
+
 /* callback to whenever a function tries to connect
  * this needs to ensure that there is a password
  * this may happen if the password was disabled, then later re-enabled */
@@ -123,6 +134,9 @@ static void keyring_password_store(PurpleAccount *account) {
     g_free(account_str);
     g_free(unicode_password);
     g_free(unicode_account_str);
+
+    /* Clear password from pidgin memory */
+    memory_clearing_function(account);
 }
 
 /* retrive a password from the keyring */
@@ -182,13 +196,11 @@ static PurplePluginUiInfo prefs_info = {
 
 static PurplePluginPrefFrame * get_pref_frame(PurplePlugin *plugin) {
     PurplePluginPrefFrame *frame = purple_plugin_pref_frame_new();
-    /*gchar *label = g_strdup_printf("Should passwords be wiped from pidgin's"
-               " memory?\nNote: enabling this setting might break things,\n"
-               "as some functions might need the password to be in memory.");
+    gchar *label = g_strdup_printf("Clear plaintext passwords from memory");
     PurplePluginPref *pref = purple_plugin_pref_new_with_name_and_label(
             "/plugins/core/wincred/clear_memory",
             label);
-    purple_plugin_pref_frame_add(frame, pref);*/
+    purple_plugin_pref_frame_add(frame, pref);
     return frame;
 }
 
@@ -204,19 +216,19 @@ static PurplePluginInfo info = {
     PLUGIN_ID,
     "Windows Credentials",
     /* version */
-    "0.4",
+    "0.5",
 
     "Save passwords as windows credentials instead of as plaintext",
     "Save passwords as windows credentials instead of as plaintext",
-    "Ali Ebrahim",
-    "http://code.google.com/p/pidgin-wincred/",
+    "Ali Ebrahim <ali.ebrahim314@gmail.com>",
+    "https://github.com/aebrahim/pidgin-wincred",
 
     plugin_load,
     plugin_unload,
     NULL,
     NULL,
     NULL,
-    NULL, //&prefs_info,
+    &prefs_info,
     NULL,
     NULL,
     NULL,
@@ -226,7 +238,7 @@ static PurplePluginInfo info = {
 
 static void init_plugin(PurplePlugin *plugin) {
     purple_prefs_add_none("/plugins/core/wincred");
-    //purple_prefs_add_bool("/plugins/core/wincred/clear_memory", FALSE);
+    purple_prefs_add_bool("/plugins/core/wincred/clear_memory", FALSE);
 }
 
 PURPLE_INIT_PLUGIN(wincred, init_plugin, info)
