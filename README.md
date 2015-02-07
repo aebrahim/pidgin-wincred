@@ -12,7 +12,7 @@ would be helpful.
 ## Installation Instructions
 
 Download the zip file for the latest version. Unzip the file, and copy the
-pidgin-wincred.dll file to %APPDATA%\.purple\plugins
+pidgin-wincred.dll file to ```%APPDATA%\.purple\plugins```
 
 
 ## Build-it-yourself Instructions
@@ -20,4 +20,5 @@ pidgin-wincred.dll file to %APPDATA%\.purple\plugins
 To build the plugin from source, follow the instructions for [building pidgin
 on windows](http://developer.pidgin.im/wiki/BuildingWinPidgin). Put the source
 into the libpurple subdirectory. You will need to use the 32 bit version of
-the mingw-w64 compiler.
+the mingw-w64 compiler. The easiest possible way is to copy the build procedure
+used in .travis.yml to set up the environment.
