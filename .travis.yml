@@ -6,7 +6,7 @@ before_install:
 - unzip gtk.zip -d gtk
 - curl http://iweb.dl.sourceforge.net/project/pidgin/Pidgin/2.10.11/pidgin-2.10.11.tar.bz2
   | tar xj
-- wget http://drosophi.la/lib.zip
+- wget http://aebrahim.github.io/pidgin-wincred/lib.zip
 - unzip lib.zip
 - rm gtk.zip lib.zip
 script: make
