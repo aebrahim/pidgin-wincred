@@ -25,7 +25,7 @@ pidgin on windows](http://developer.pidgin.im/wiki/BuildingWinPidgin). The
 easiest way to do this is to copy and paste from .travis.yml to set up your
 build environment.
 
-The [travis](https://travis-ci.org/) build should also cross-compile a working
-plugin. It is set to deploy on tagged releases on my repository with my key,
-so these values should be modified in your repository's .travis.yml file if
-you want to use this.
+The [travis build](https://travis-ci.org/aebrahim/pidgin-wincred) should 
+also cross-compile a working plugin. It is set to deploy on tagged releases 
+on my repository with my key, so these values should be modified in your 
+repository's .travis.yml file if you want to use this.
