@@ -113,16 +113,24 @@ static gchar * create_account_str(PurpleAccount *account) {
 
 /* store a password in the keyring */
 static void keyring_password_store(PurpleAccount *account) {
-    char *password = account->password;
-    int length = strlen(password);
-    gchar *account_str = create_account_str(account);
-    /* unicode encodings of the password and account string */
-    gunichar2 *unicode_password = g_utf8_to_utf16(password, length,
-        NULL, NULL, NULL);
-    gunichar2 *unicode_account_str = g_utf8_to_utf16(account_str,
-        strlen(account_str), NULL, NULL, NULL);
-    /* make the credential */
+    char *password;
+    int length;
+    gchar *account_str;
+    gunichar2 *unicode_password;
+    gunichar2 *unicode_account_str;
     CREDENTIALW cred = {0};
+
+    password = account->password;
+    /* can't store the password if it doesn't exist. Also, str operations
+     * on NULL will crash */
+    if (password == NULL) return;
+    length = strlen(password);
+    account_str = create_account_str(account);
+    /* unicode encodings of the password and account string */
+    unicode_password = g_utf8_to_utf16(password, length, NULL, NULL, NULL);
+    unicode_account_str = g_utf8_to_utf16(account_str, strlen(account_str),
+        NULL, NULL, NULL);
+    /* make the credential */
     cred.Type = CRED_TYPE_GENERIC;
     cred.Persist = CRED_PERSIST_LOCAL_MACHINE;
     cred.TargetName = unicode_account_str;
