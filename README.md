@@ -1,4 +1,5 @@
 # pidgin-wincred
+[![Build Status](https://travis-ci.org/aebrahim/pidgin-wincred.svg?branch=master)](https://travis-ci.org/aebrahim/pidgin-wincred)
 
 Pidgin usually stores passwords as plaintext, which is generally considered
 a poor idea. This plugin uses the Windows Credential Manger to log passwords,
