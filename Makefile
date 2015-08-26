@@ -29,9 +29,7 @@ LIBS = -lglib-2.0 -lpurple
 all: $(TARGET)
 
 .c.dll:
-	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -mwindows -o $@.o -c $<
-	$(CC) -shared $@.o $(LIB_PATHS) $(LIBS) $(LD_FLAGS) -o $@
-	rm $@.o
+	$(CC) $(CFLAGS) $(INCLUDE_PATHS) -mwindows $< keyring_plugin.c -shared $(LIB_PATHS) $(LIBS) $(LD_FLAGS) -o $@
 
 clean:
 	rm -f *.o *.dll
