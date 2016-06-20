@@ -224,7 +224,7 @@ static PurplePluginInfo info = {
     PLUGIN_ID,
     "Windows Credentials",
     /* version */
-    "0.5",
+    "0.6",
 
     "Save passwords as windows credentials instead of as plaintext",
     "Save passwords as windows credentials instead of as plaintext",

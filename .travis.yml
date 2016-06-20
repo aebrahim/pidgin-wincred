@@ -4,7 +4,7 @@ before_install:
 - wget http://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.14/gtk+-bundle_2.14.7-20090119_win32.zip
   -O gtk.zip
 - unzip gtk.zip -d gtk
-- curl http://iweb.dl.sourceforge.net/project/pidgin/Pidgin/2.10.11/pidgin-2.10.11.tar.bz2
+- curl http://freefr.dl.sourceforge.net/project/pidgin/Pidgin/2.10.12/pidgin-2.10.12.tar.bz2
   | tar xj
 - wget http://aebrahim.github.io/pidgin-wincred/lib.zip
 - unzip lib.zip

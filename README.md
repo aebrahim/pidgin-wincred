@@ -6,7 +6,7 @@ a poor idea. This plugin uses the Windows Credential Manger to log passwords,
 which in theory only allows the user who wrote the credentials to read
 them back. Many would argue this is a more secure form of password storage.
 
-This plugin has primarily been tested on Windows 7 and 8, but some users have
+This plugin has primarily been tested on Windows 7 and 10, but some users have
 also reported success with Windows XP. Feedback (by posting issues to the
 [tracker](https://github.com/aebrahim/pidgin-wincred/issues)) would be helpful.
 

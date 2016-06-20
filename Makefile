@@ -4,7 +4,7 @@ TARGET = pidgin-wincred.dll
 
 # Filepaths
 GTK_TOP := gtk
-PURPLE_TOP := pidgin-2.10.11/libpurple
+PURPLE_TOP := pidgin-2.10.12/libpurple
 
 # Compiler
 CC := i686-w64-mingw32-gcc
